@@ -1,6 +1,6 @@
 import sqlite3
 import os
-
+import pytest
 
 class Singleton:
     count = 0
@@ -55,7 +55,7 @@ def delete_database():
     """
     if os.path.exists('aquarium.db'):
         os.remove('aquarium.db')
-   
+        
 def db_fresh_start():
     """For testing purposes, it's useful to reset to a known state.
         So we clear the database, and then unitialize it with only our small set of data
@@ -66,22 +66,36 @@ def db_fresh_start():
 ################################
 # ***** TESTS *****
 ################################
+@pytest.fixture
+def setup_database():
+    con = sqlite3.connect(':memory:')
+    cur = con.cursor()
+    cur.execute("CREATE TABLE fish (name TEXT, species TEXT, tank_number INTEGER)")
+    cur.execute("INSERT INTO fish VALUES ('Sammy', 'shark', 1)")
+    cur.execute("INSERT INTO fish VALUES ('Jamie', 'cuttlefish', 7)")
+    con.commit()
+    yield con
+    
+
 def test_is_singleton():
     delete_database()
     a = Singleton()
     b = Singleton()
     assert id(a) == id(b)
-    
+    delete_database()
+
 def test_not_initialized():
     delete_database()
     db = Singleton()
     assert [] == db.sql("SELECT * FROM FISH;")
+    delete_database()
 
 def test_database_connect():
     db_fresh_start()
     db = Singleton()
     db.get_cursor()
     assert 2 == len(db.sql("SELECT * FROM fish;"))
+    delete_database()
 
 def test_resetting_after_db_creation():
     delete_database()
@@ -97,9 +111,14 @@ def test_resetting_after_db_creation():
 
     db_a.get_cursor()
     assert 2 == len(db_b.sql("SELECT * FROM fish;"))
+    delete_database()
+
+@pytest.mark.smoke
+def test_pytest_fixture(setup_database):
+    cur = setup_database
+    assert 2 == len(list(cur.execute('SELECT * FROM fish')))
 
 
-    
 if __name__=="__main__":
 
     

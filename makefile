@@ -13,5 +13,7 @@ test:
 clean:
 	rm aquarium.db
 
-clean_view:
-	make clean init view
+clean_view: clean init view
+
+test_smoke:
+	pytest -vvx -m smoke db_viewer.py
