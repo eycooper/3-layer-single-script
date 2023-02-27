@@ -117,7 +117,7 @@ def test_resetting_after_db_creation():
 def test_pytest_fixture(setup_database):
     cur = setup_database
     assert 2 == len(list(cur.execute('SELECT * FROM fish')))
-
+    delete_database()
 
 if __name__=="__main__":
 
